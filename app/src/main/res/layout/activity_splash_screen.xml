@@ -8,7 +8,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/bosque1"
-
     tools:context=".SplashScreen">
 
     <ImageView
@@ -18,10 +17,40 @@
         android:src="@drawable/logo" />
 
     <com.airbnb.lottie.LottieAnimationView
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="match_parent"
+        android:layout_height="423dp"
+        app:lottie_autoPlay="true"
+        app:lottie_fileName="Location.json"
         app:lottie_imageAssetsFolder="assets"
+        app:lottie_loop="true" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="54dp"
+        android:layout_gravity="center"
+        android:text="@string/Nombre_app"
+        android:textColor="@color/cardview_light_background"
+        android:textSize="26sp"
+        android:layout_marginTop="40dp"/>
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/version"
+        android:textColor="@color/cardview_light_background"
+        android:textSize="20sp"
+        android:layout_marginTop="35dp"
+        />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/desarrollador"
+        android:textColor="@color/cardview_light_background"
+        android:textSize="12sp"
+        android:layout_marginTop="15dp"
+        />
 
 </LinearLayout>
