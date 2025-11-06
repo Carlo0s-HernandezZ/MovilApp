@@ -1,153 +1,142 @@
 package com.carloscode.gestorcam.activities
 
 import android.Manifest
-import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.carloscode.gestorcam.controller.CameraManager
 import com.carloscode.gestorcam.databinding.ActivityCameraUseBinding
 import com.carloscode.gestorcam.utils.WatermarkHelper
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.*
+
+/**
+ * ------------------------------------------------------------
+ * Clase: CameraUse
+ * ------------------------------------------------------------
+ * Descripción general:
+ * --------------------
+ * Esta Activity representa la interfaz principal de captura de fotos.
+ *
+ * Su función es coordinar el flujo de la cámara mediante `CameraManager`
+ * y aplicar una marca de agua a cada imagen capturada usando `WatermarkHelper`.
+ *
+ * Autor: Team SWGJ
+ * Proyecto: GestorCam
+ * Fecha: 2025
+ * ------------------------------------------------------------
+ */
 
 class CameraUse : ComponentActivity() {
 
+    // Enlace con el layout mediante ViewBinding
     private lateinit var viewBinding: ActivityCameraUseBinding
-    private lateinit var cameraExecutor: ExecutorService
-    private var imageCapture: ImageCapture? = null
 
-    private val activityResultLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions())
-        { permissions ->
+    // Controlador de cámara (maneja toda la lógica de CameraX)
+    private lateinit var cameraManager: CameraManager
+
+    /**
+     * Permisos de cámara solicitados en tiempo de ejecución
+     */
+    private val permissionsLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             if (permissions.containsValue(false)) {
-                Toast.makeText(baseContext, "Permiso denegado.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
             } else {
-                startCamera()
+                iniciarCamara()
             }
         }
 
+    /**
+     * Método principal que inicializa la vista, permisos y eventos.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityCameraUseBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
-        if (allPermissionsGranted()) {
-            startCamera()
+        // Inicializamos el controlador de cámara
+        cameraManager = CameraManager(this)
+
+        // Verificamos permisos
+        if (todosLosPermisosConcedidos()) {
+            iniciarCamara()
         } else {
-            requestPermissions()
+            solicitarPermisos()
         }
 
-        viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
-
-        cameraExecutor = Executors.newSingleThreadExecutor()
+        // Listener del botón de captura
+        viewBinding.imageCaptureButton.setOnClickListener {
+            capturarFoto()
+        }
     }
 
-    private fun takePhoto() {
-        val imageCapture = imageCapture ?: return
+    /**
+     * Inicia la cámara con la vista previa en el componente de la interfaz.
+     */
+    private fun iniciarCamara() {
+        cameraManager.startCamera(viewBinding.viewFinder.surfaceProvider)
+    }
 
-        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis())
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/GestorCam-Images")
+    /**
+     * Captura una foto delegando la lógica a `CameraManager`
+     * y aplica una marca de agua a la imagen guardada.
+     */
+    private fun capturarFoto() {
+        cameraManager.takePhoto { uri ->
+            if (uri != null) {
+                val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                WatermarkHelper.addWatermark(this, uri, "AMBU | $timestamp")
+
+                val msg = "Foto guardada con éxito con marca de agua"
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                Log.d(TAG, msg)
+            } else {
+                Toast.makeText(this, "Error al capturar la foto", Toast.LENGTH_SHORT).show()
             }
         }
-
-        val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(contentResolver, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            .build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exc: ImageCaptureException) {
-                    Log.e(TAG, "Fallo al guardar la foto: ${exc.message}", exc)
-                    Toast.makeText(baseContext, "Error al guardar foto", Toast.LENGTH_SHORT).show()
-                }
-
-                override fun onImageSaved(output: ImageCapture.OutputFileResults){
-                    output.savedUri?.let {
-                        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-                        WatermarkHelper.addWatermark(this@CameraUse, it, "AMBU | $timestamp")
-                        val msg = "Foto guardada con éxito con marca de agua: ${it}"
-                        Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                        Log.d(TAG, msg)
-                    } ?: run {
-                        val msg = "Fallo al guardar la foto con marca de agua"
-                        Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                        Log.d(TAG, msg)
-                    }
-                }
-            }
-        )
     }
 
-    private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+    /**
+     * Verifica si todos los permisos requeridos están concedidos.
+     */
+    private fun todosLosPermisosConcedidos(): Boolean =
+        PERMISOS_REQUERIDOS.all {
+            ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+        }
 
-        cameraProviderFuture.addListener({
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
-                }
-
-            imageCapture = ImageCapture.Builder().build()
-
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
-            } catch(exc: Exception) {
-                Log.e(TAG, "Fallo al iniciar la cámara", exc)
-            }
-
-        }, ContextCompat.getMainExecutor(this))
+    /**
+     * Solicita los permisos necesarios al usuario.
+     */
+    private fun solicitarPermisos() {
+        permissionsLauncher.launch(PERMISOS_REQUERIDOS)
     }
 
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun requestPermissions() {
-        activityResultLauncher.launch(REQUIRED_PERMISSIONS)
-    }
-
+    /**
+     * Libera los recursos de cámara cuando se destruye la actividad.
+     */
     override fun onDestroy() {
         super.onDestroy()
-        cameraExecutor.shutdown()
+        cameraManager.shutdown()
     }
 
     companion object {
-        private const val TAG = "CameraXApp"
-        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-        private val REQUIRED_PERMISSIONS =
-            mutableListOf (
-                Manifest.permission.CAMERA
-            ).apply {
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                }
-            }.toTypedArray()
+        private const val TAG = "CameraUseActivity"
+
+        /**
+         * Lista de permisos requeridos para el funcionamiento de la cámara.
+         */
+        private val PERMISOS_REQUERIDOS = mutableListOf(
+            Manifest.permission.CAMERA
+        ).apply {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }.toTypedArray()
     }
 }
