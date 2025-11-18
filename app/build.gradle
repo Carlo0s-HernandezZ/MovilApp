@@ -4,52 +4,79 @@ plugins {
 }
 
 android {
-    namespace 'com.carloscode.gestorcam'
-    compileSdk {
-        version = release(36)
-    }
+    namespace = "com.carloscode.gestorcam"
+    compileSdk = 34
 
     defaultConfig {
-        applicationId "com.carloscode.gestorcam"
-        minSdk 28
-        targetSdk 36
-        versionCode 1
-        versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        applicationId = "com.carloscode.gestorcam"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
+
     buildFeatures {
         viewBinding = true
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
-dependencies {
-    implementation libs.appcompat
-    implementation libs.material
-    implementation libs.lottie
-    implementation libs.activity
-    implementation libs.constraintlayout
-    implementation libs.play.services.maps
-    testImplementation libs.junit
-    androidTestImplementation libs.ext.junit
-    androidTestImplementation libs.espresso.core
-    def camerax_version = "1.3.4"
-    implementation "androidx.camera:camera-core:$camerax_version"
-    implementation "androidx.camera:camera-camera2:$camerax_version"
-    implementation "androidx.camera:camera-lifecycle:$camerax_version"
-    implementation "androidx.camera:camera-view:$camerax_version"
+// ===================== CORRECCIÓN AQUÍ =====================
+// Definimos la variable en un bloque 'ext' para que sea visible en todo el archivo.
+ext {
+    camerax_version = "1.3.4" // O la versión que desees usar
 }
+// =========================================================
+
+dependencies {
+    // --- DEPENDENCIAS ESTABLES Y COMPATIBLES CON SDK 34 ---
+
+    // Núcleo de Android
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+
+    // Actividades y Diseño
+    implementation("androidx.activity:activity:1.9.3")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+    implementation("com.google.android.material:material:1.12.0")
+
+    // Servicios de Google (GPS)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Utilidades (Corutinas y Ciclo de Vida)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+
+    // Ahora Gradle encontrará la variable 'camerax_version' que definimos arriba.
+    implementation("androidx.camera:camera-core:${camerax_version}")
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
+    implementation("androidx.camera:camera-extensions:${camerax_version}")
+
+    // Glide (Para cargar imágenes rápido en el historial)
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // Testing
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+}
+

@@ -1,18 +1,5 @@
 <resources>
     <string name="app_name">GestorCam</string>
-    <string name="Nombre_app">AMBU</string>
-    <string name="version">Version 1.0</string>
-    <string name="desarrollador">Desarrollada Por TeamSWGJ</string>
-    <string name="camra">Camara</string>
-    <string name="lVerificacion">Lista de Verificacion</string>
-    <string name="rinsicidencias">Reporte de Insicidencia</string>
-    <string name="abrir_nav">Abrir Barra de Navegacion</string>
-    <string name="cerrar_nav">Cerrar Barra de Navegacion</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="open_nav">Abrir menú de navegación</string>
-    <string name="close_nav">Cerrar menú de navegación</string>
-
-
-
+    <string name="navigation_drawer_open">Abrir menú de navegación</string>
+    <string name="navigation_drawer_close">Cerrar menú de navegación</string>
 </resources>
