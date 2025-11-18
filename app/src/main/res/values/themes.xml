@@ -3,7 +3,17 @@
     <style name="Base.Theme.GestorCam" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:colorPrimary">@color/lavender</item>
+        <item name="colorPrimaryVariant">@color/lavender</item>
     </style>
 
     <style name="Theme.GestorCam" parent="Base.Theme.GestorCam" />
+    
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_in</item>
+        <item name="android:windowExitAnimation">@anim/slide_out</item>
+
+
+    </style>
+    
 </resources>
